@@ -5,9 +5,12 @@ import JSON5 from "json5";
 
 import { createFixture, json } from "./helpers/create-fixture";
 
-async function getTsConfig(projectDir: string) {
-  let tsconfigPath = path.join(projectDir, "tsconfig.json");
-  let config = await fse.readFile(tsconfigPath, "utf8");
+async function getTsConfig(
+  projectDir: string,
+  configType: "tsconfig.json" | "jsconfig.json" = "tsconfig.json"
+) {
+  let configPath = path.join(projectDir, configType);
+  let config = await fse.readFile(configPath, "utf8");
   return JSON5.parse(config);
 }
 
@@ -24,7 +27,7 @@ const DEFAULT_CONFIG = {
     noEmit: true,
     resolveJsonModule: true,
     strict: true,
-    target: "es2019",
+    target: "ES2019",
     baseUrl: ".",
     paths: {
       "~/*": ["./app/*"],
@@ -116,10 +119,28 @@ test("allows for `extends` in tsconfig", async () => {
       noEmit: true,
       resolveJsonModule: true,
       strict: true,
-      target: "es2019",
+      target: "ES2019",
       paths: {
         "~/*": ["./app/*"],
       },
     },
+  });
+});
+
+test("works with jsconfig", async () => {
+  let config = {
+    compilerOptions: DEFAULT_CONFIG.compilerOptions,
+  };
+
+  let fixture = await createFixture({
+    files: {
+      "jsconfig.json": json(config),
+    },
+  });
+
+  let jsconfig = await getTsConfig(fixture.projectDir, "jsconfig.json");
+  expect(jsconfig).toEqual({
+    ...config,
+    include: ["**/*.js", "**/*.jsx"],
   });
 });
